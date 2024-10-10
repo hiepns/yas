@@ -2,6 +2,7 @@ import slugify from 'slugify';
 
 import { FormProduct } from './FormProduct';
 import { ProductOptionValuePost } from './ProductOptionValuePost';
+import { ProductVariation } from './ProductVariation';
 import { ProductVariationPost } from './ProductVariationPost';
 import { ProductVariationPut } from './ProductVariationPut';
 
@@ -15,6 +16,11 @@ export type ProductPayload = {
   specification?: string;
   sku?: string;
   gtin?: string;
+  weight?: number;
+  dimensionUnit?: string;
+  length?: number;
+  width?: number;
+  height?: number;
   price?: number;
   isAllowedToOrder?: boolean;
   isPublished?: boolean;
@@ -44,6 +50,11 @@ export function mapFormProductToProductPayload(data: FormProduct): ProductPayloa
     specification: data.specification,
     sku: data.sku,
     gtin: data.gtin,
+    weight: data.weight,
+    dimensionUnit: data.dimensionUnit,
+    length: data.length,
+    width: data.width,
+    height: data.height,
     price: data.price,
     isAllowedToOrder: data.isAllowedToOrder,
     isPublished: data.isPublished,
@@ -61,17 +72,44 @@ export function mapFormProductToProductPayload(data: FormProduct): ProductPayloa
           return {
             id: variant.id,
             name: variant.optionName,
-            slug: slugify(variant.optionName),
+            slug: slugify(variant.optionName, { lower: true, strict: true }),
             sku: variant.optionSku,
             gtin: variant.optionGTin,
             price: variant.optionPrice,
             thumbnailMediaId: variant.optionThumbnail?.id,
             productImageIds: variant.optionImages?.map((image) => image.id),
+            optionValuesByOptionId: variant.optionValuesByOptionId,
           };
         })
       : [],
-    productOptionValues: data.productOptions?.map((option) => ({ ...option, displayOrder: 1 })),
+    productOptionValues: createProductOptionValues(data.productVariations || []),
     relatedProductIds: data.relateProduct,
     taxClassId: data.taxClassId,
   };
 }
+
+const createProductOptionValues = (productVariations: ProductVariation[]) => {
+  let productOptionValues: ProductOptionValuePost[] = [];
+  productVariations.forEach((variation) => {
+    const option = variation.optionValuesByOptionId;
+    Object.entries(option).forEach((entry) => {
+      const id = +entry[0];
+      const value = entry[1];
+      let optionValue = productOptionValues.find((option) => {
+        return option.productOptionId === id;
+      });
+      if (optionValue) {
+        if (!optionValue.value.includes(value)) {
+          optionValue.value.push(value);
+        }
+      } else {
+        productOptionValues.push({
+          productOptionId: id,
+          displayOrder: 1,
+          value: [value],
+        });
+      }
+    });
+  });
+  return productOptionValues;
+};

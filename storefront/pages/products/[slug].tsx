@@ -1,6 +1,6 @@
 import { GetServerSideProps, GetServerSidePropsContext } from 'next';
 import Head from 'next/head';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Container, Table } from 'react-bootstrap';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
@@ -34,6 +34,22 @@ type Props = {
   pvid: string | null;
 };
 
+// Function to fetch and sort product variations
+const fetchAndSortProductVariations = async (productId: number): Promise<ProductVariation[]> => {
+  try {
+    let productVariations = await getProductVariationsByParentId(productId);
+    if (productVariations && productVariations.length > 0) {
+      productVariations = productVariations.sort((a, b) => {
+        return Object.keys(a.options).length - Object.keys(b.options).length;
+      });
+    }
+    return productVariations;
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
+
 export const getServerSideProps: GetServerSideProps = async (
   context: GetServerSidePropsContext
 ) => {
@@ -49,18 +65,19 @@ export const getServerSideProps: GetServerSideProps = async (
   if (product.hasOptions) {
     // fetch product options
     try {
-      const productOptionValue = await getProductOptionValues(product.id);
+      const productOptionValues = await getProductOptionValues(product.id);
 
-      for (const option of productOptionValue) {
+      for (const optionValue of productOptionValues) {
         const index = productOptions.findIndex(
-          (productOption) => productOption.name === option.productOptionName
+          (productOption) => productOption.name === optionValue.productOptionName
         );
         if (index > -1) {
-          productOptions.at(index)?.value.push(option.productOptionValue);
+          productOptions.at(index)?.value.push(optionValue.productOptionValue);
         } else {
           const newProductOption: ProductOptions = {
-            name: option.productOptionName,
-            value: [option.productOptionValue],
+            id: optionValue.productOptionId,
+            name: optionValue.productOptionName,
+            value: [optionValue.productOptionValue],
           };
 
           productOptions.push(newProductOption);
@@ -71,11 +88,7 @@ export const getServerSideProps: GetServerSideProps = async (
     }
 
     // fetch product variations
-    try {
-      productVariations = await getProductVariationsByParentId(product.id);
-    } catch (error) {
-      console.error(error);
-    }
+    productVariations = await fetchAndSortProductVariations(product.id);
   }
 
   return {
@@ -190,7 +203,7 @@ const ProductDetailsPage = ({ product, productOptions, productVariations, pvid }
       <div className="container" style={{ marginTop: '70px' }}>
         <Table>
           {product.productAttributeGroups.map((attributeGroup) => (
-            <>
+            <Fragment key={attributeGroup.name}>
               <thead key={attributeGroup.name}>
                 <tr className="product_detail_tr">
                   <th className="product_detail_th">{attributeGroup.name} :</th>
@@ -206,7 +219,7 @@ const ProductDetailsPage = ({ product, productOptions, productVariations, pvid }
                   </tr>
                 ))}
               </tbody>
-            </>
+            </Fragment>
           ))}
         </Table>
       </div>

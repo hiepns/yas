@@ -19,6 +19,7 @@ export const UPDATE_SUCCESSFULLY = 'Update successfully';
 export const CREATE_SUCCESSFULLY = 'Create successfully';
 export const UPDATE_FAILED = 'Update failed';
 export const CREATE_FAILED = 'Create failed';
+export const ADD_PRODUCT_INTO_WAREHOUSE_SUCCESSFULLY = 'Add product(s) into warehouse successfully';
 export const TOAST_DURATION = 4000;
 export const CATEGORIES_URL = '/catalog/categories';
 export const BRAND_URL = '/catalog/brands';
@@ -41,6 +42,7 @@ export const SALES_RETURN_REQUESTS_URL = '/sales/return-requests';
 export const SALES_RECURRING_PAYMENTS_URL = '/sales/recurring-payments';
 export const SALES_GIFT_CARDS_URL = '/sales/gift-cards';
 export const SALES_SHOPPING_CARTS_AND_WISHLISTS_URL = '/sales/shopping-carts-and-wishlists';
+export const MANAGER_PROMOTIONS_URL = '/promotion/manager-promotion';
 
 export const SYSTEM_PAYMENT_PROVIDERS = '/system/payment-providers';
 export const SYSTEM_SETTINGS = '/system/settings';

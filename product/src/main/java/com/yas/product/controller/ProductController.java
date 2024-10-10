@@ -248,4 +248,28 @@ public class ProductController {
         productService.subtractStockQuantity(productQuantityPutVm);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/backoffice/products/by-ids")
+    public ResponseEntity<List<ProductListVm>> getProductByIds(@RequestParam List<Long> ids) {
+        return ResponseEntity.ok(productService.getProductByIds(ids));
+    }
+
+    @GetMapping("/backoffice/products/by-categories")
+    public ResponseEntity<List<ProductListVm>> getProductByCategories(
+        @RequestParam("ids") List<Long> categoryIds) {
+        return ResponseEntity.ok(productService.getProductByCategoryIds(categoryIds));
+    }
+
+    @GetMapping("/backoffice/products/by-brands")
+    public ResponseEntity<List<ProductListVm>> getProductByBrands(
+        @RequestParam("ids") List<Long> brandIds) {
+        return ResponseEntity.ok(productService.getProductByBrandIds(brandIds));
+    }
+
+    @GetMapping("/backoffice/products/latest/{count}")
+    public ResponseEntity<List<ProductListVm>> getLatestProducts(@PathVariable int count) {
+        return ResponseEntity.ok(productService.getLatestProducts(count));
+    }
+
+
 }

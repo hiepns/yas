@@ -34,36 +34,52 @@ export default function ProductDetails({
   averageStar,
   totalRating,
 }: ProductDetailProps) {
+  const [listImages, setListImages] = useState<string[]>([]);
+
+  const getColorId = (options: ProductOptions[]) => {
+    return options.find((attr) => attr.name === 'COLOR')?.id;
+  };
+
   const initCurrentSelectedOption = useMemo(() => {
-    if (
-      productOptions &&
-      productOptions.length > 0 &&
-      productVariations &&
-      productVariations.length > 0
-    ) {
-      if (pvid) {
-        const productVariation = productVariations?.find((item) => item.id.toString() === pvid);
-        if (productVariation) {
-          return Object.keys(productVariation.options).reduce((acc, cur) => {
-            return {
-              ...acc,
-              [cur]: productVariation.options[cur],
-            };
-          }, {});
-        }
-      }
-      return productVariations[0].options;
-    } else {
+    if (!productOptions?.length || !productVariations?.length) {
+      setListImages([
+        ...(product.thumbnailMediaUrl ? [product.thumbnailMediaUrl] : []),
+        ...product.productImageMediaUrls,
+      ]);
       return {};
     }
+
+    const productVariation = pvid && productVariations.find((item) => item.id.toString() === pvid);
+    if (productVariation) {
+      return productVariation.options;
+    }
+
+    const colorId = getColorId(productOptions);
+    const productWithColor = productVariations.find(
+      (variant) => String(colorId) in variant.options
+    );
+
+    setListImages(
+      productWithColor
+        ? [
+            ...(productWithColor.thumbnail?.url ? [productWithColor.thumbnail.url] : []),
+            ...productWithColor.productImages.map((image) => image.url),
+          ]
+        : [
+            ...(product.thumbnailMediaUrl ? [product.thumbnailMediaUrl] : []),
+            ...product.productImageMediaUrls,
+          ]
+    );
+    return productWithColor ? productWithColor.options : productVariations[0].options;
   }, [productOptions, productVariations, pvid]);
 
   const router = useRouter();
   const [currentSelectedOption, setCurrentSelectedOption] =
     useState<CurrentSelectedOption>(initCurrentSelectedOption);
+  const [optionSelected, setOptionSelected] = useState<CurrentSelectedOption>({});
+  const [isUnchecking, setIsUnchecking] = useState<boolean>(false);
   const [currentProduct, setCurrentProduct] = useState<ProductDetail | ProductVariation>(product);
   const { fetchNumberCartItems } = useCartContext();
-
   useEffect(() => {
     if (
       productOptions &&
@@ -78,20 +94,64 @@ export default function ProductDetails({
   }, [productOptions, productVariations, pvid, currentProduct.id]);
 
   useEffect(() => {
-    if (
-      productOptions &&
-      productOptions.length > 0 &&
-      productVariations &&
-      productVariations.length > 0
-    ) {
-      const productVariation = productVariations.find((item) => {
+    const isOptionSelected = (
+      key: string,
+      currentSelectedOption: CurrentSelectedOption,
+      item: ProductVariation
+    ) => {
+      return currentSelectedOption[+key] === item.options[+key];
+    };
+
+    const areAllOptionsSelected = (
+      optionKeys: string[],
+      currentSelectedOption: CurrentSelectedOption,
+      item: ProductVariation
+    ) => {
+      return optionKeys.every((key: string) => isOptionSelected(key, currentSelectedOption, item));
+    };
+
+    const findProductVariationMatchAllOptions = () => {
+      return productVariations?.find((item) => {
+        const optionKeys = Object.keys(item.options);
         return (
-          Object.keys(item.options).length === Object.keys(currentSelectedOption).length &&
-          Object.keys(item.options).every((key) => currentSelectedOption[key] === item.options[key])
+          optionKeys.length === Object.keys(currentSelectedOption).length &&
+          areAllOptionsSelected(optionKeys, currentSelectedOption, item)
         );
       });
-      if (productVariation) {
-        setCurrentProduct(productVariation);
+    };
+
+    const updateListImagesByProductVariationMatchAllOptions = (variation: ProductVariation) => {
+      const urls = [
+        ...(variation.thumbnail?.url ? [variation.thumbnail.url] : []),
+        ...variation.productImages.map((image) => image.url),
+      ];
+      setListImages(urls);
+      setCurrentProduct(variation);
+      setCurrentSelectedOption(variation.options);
+    };
+
+    const updateListImagesBySelectedOption = (productVariations: ProductVariation[]) => {
+      const productSelected = productVariations.find((item) => {
+        return item.options[+Object.keys(optionSelected)[0]] == Object.values(optionSelected)[0];
+      });
+
+      if (productSelected) {
+        const urlList = productSelected.productImages.map((image) => image.url);
+        setListImages([
+          ...(productSelected.thumbnail?.url ? [productSelected.thumbnail.url] : []),
+          ...urlList,
+        ]);
+        setCurrentSelectedOption(productSelected.options);
+        setCurrentProduct(productSelected);
+      }
+    };
+
+    if (productOptions?.length && productVariations?.length) {
+      const productVariationMatchAllOptions = findProductVariationMatchAllOptions();
+      if (productVariationMatchAllOptions) {
+        updateListImagesByProductVariationMatchAllOptions(productVariationMatchAllOptions);
+      } else if (!isUnchecking) {
+        updateListImagesBySelectedOption(productVariations);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -116,17 +176,29 @@ export default function ProductDetails({
       });
   };
 
-  const handleSelectOption = (optionName: string, optionValue: string) => {
+  const handleSelectOption = (optionId: number, optionValue: string) => {
     if (
       productOptions &&
       productOptions.length > 0 &&
       productVariations &&
       productVariations.length > 0
     ) {
-      setCurrentSelectedOption({ ...currentSelectedOption, [optionName]: optionValue });
+      if (currentSelectedOption[+optionId] === optionValue) {
+        if (Object.keys(currentSelectedOption).length > 1) {
+          setCurrentSelectedOption((prev) => {
+            const newOption = { ...prev };
+            delete newOption[+optionId];
+            return newOption;
+          });
+          setIsUnchecking(true);
+        }
+      } else {
+        setCurrentSelectedOption({ ...currentSelectedOption, [optionId]: optionValue });
+        setOptionSelected({ [optionId]: optionValue });
+        setIsUnchecking(false);
+      }
     }
   };
-
   return (
     <>
       <DetailHeader
@@ -137,7 +209,7 @@ export default function ProductDetails({
 
       <div className="row justify-content-center">
         <div className="col-6">
-          <ProductImageGallery listImages={product.productImageMediaUrls} />
+          <ProductImageGallery listImages={listImages} />
         </div>
 
         <div className="col-6">
@@ -156,11 +228,11 @@ export default function ProductDetails({
                 <button
                   key={productOptionValue}
                   className={`btn me-2 py-1 px-2 ${
-                    currentSelectedOption[productOption.name] === productOptionValue
+                    currentSelectedOption[productOption.id] === productOptionValue
                       ? 'btn-primary'
                       : 'btn-outline-primary'
                   }`}
-                  onClick={() => handleSelectOption(productOption.name, productOptionValue)}
+                  onClick={() => handleSelectOption(productOption.id, productOptionValue)}
                 >
                   {productOptionValue}
                 </button>

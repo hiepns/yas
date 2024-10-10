@@ -7,8 +7,4 @@ public final class Constants {
         public static final String SIGN_IN_REQUIRED = "SIGN_IN_REQUIRED";
         public static final String FORBIDDEN = "FORBIDDEN";
     }
-
-    public final class Message {
-        public static final String SUCCESS_MESSAGE = "SUCCESS";
-    }
 }

@@ -1,67 +1,82 @@
 package com.yas.cart.service;
 
-import com.yas.cart.CartApplication;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.when;
+
 import com.yas.cart.model.Cart;
-import com.yas.cart.model.CartItem;
 import com.yas.cart.repository.CartItemRepository;
 import com.yas.cart.repository.CartRepository;
+import com.yas.cart.viewmodel.CartItemVm;
 import com.yas.cart.viewmodel.CartListVm;
-import org.junit.jupiter.api.AfterEach;
+import com.yas.commonlibrary.exception.BadRequestException;
+import com.yas.commonlibrary.exception.NotFoundException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-@SpringBootTest(classes = CartApplication.class)
+@RunWith(MockitoJUnitRunner.class)
 class CartServiceTest {
-    @Autowired
+
+    @Mock
     private CartRepository cartRepository;
-    @Autowired
+    @Mock
     private CartItemRepository cartItemRepository;
-    @MockBean
+    @Mock
     private ProductService productService;
-    @Autowired
+    @InjectMocks
     private CartService cartService;
-    Cart cart1;
-    Cart cart2;
 
     @BeforeEach
     void setUp() {
-        cart1 = cartRepository.save(Cart
-                .builder().customerId("customer-1").build());
-        cart2 = cartRepository.save(Cart
-                .builder().customerId("customer-2").build());
-
-        CartItem cartItem1 = new CartItem();
-        cartItem1.setProductId(1L);
-        cartItem1.setQuantity(2);
-        cartItem1.setCart(cart1);
-        CartItem cartItem2 = new CartItem();
-        cartItem2.setProductId(2L);
-        cartItem2.setQuantity(3);
-        cartItem2.setCart(cart2);
-
-        cartItemRepository.saveAll(List.of(cartItem1, cartItem2));
-    }
-
-    @AfterEach
-    void tearDown() {
-        cartItemRepository.deleteAll();
-        cartRepository.deleteAll();
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    void getCarts_ExistInDatabase_Success() {
-        List<CartListVm> cartListVmActual = cartService.getCarts();
-        assertEquals(2, cartListVmActual.size());
-        for(CartListVm cartListVm : cartListVmActual) {
-            assertThat(cartListVm.customerId().startsWith("customer-"));
-        }
+    void testGetAllCarts_thenReturnCartsList() {
+        List<Cart> cartList = Collections.singletonList(new Cart(1L, "customerId", null, new HashSet<>()));
+        when(cartRepository.findAll()).thenReturn(cartList);
+
+        List<CartListVm> cartItemVms = cartService.getCarts();
+
+        assertEquals(cartList.size(), cartItemVms.size());
+        assertEquals(cartList.getFirst().getId(), cartItemVms.getFirst().id());
+    }
+
+    @Test
+    void testAddToCart_whenProductNotFound_thenThrowNotFoundException() {
+        List<CartItemVm> cartItemVms = Collections.singletonList(new CartItemVm(1L, 2, null));
+        when(productService.getProducts(anyList())).thenReturn(Collections.emptyList());
+
+        assertThrows(NotFoundException.class, () -> cartService.addToCart(cartItemVms));
+    }
+
+    @Test
+    void testUpdateCartItems_whenCartItemNotExisted_thenThrowBadRequestException() {
+        String customerId = "customerId";
+        CartItemVm cartItemVm = new CartItemVm(1L, 2, null);
+        when(cartRepository.findByCustomerIdAndOrderIdIsNull(customerId))
+            .thenReturn(Collections.singletonList(new Cart()));
+
+        assertThrows(BadRequestException.class, () -> cartService.updateCartItems(cartItemVm, customerId));
+    }
+
+    @Test
+    void testCountNumberItemInCart_whenEmptyCart_thenReturnZero() {
+        String customerId = "customerId";
+        when(cartRepository.findByCustomerIdAndOrderIdIsNull(customerId)).thenReturn(Collections.emptyList());
+
+        Long result = cartService.countNumberItemInCart(customerId);
+
+        assertEquals(0L, result);
     }
 }
+

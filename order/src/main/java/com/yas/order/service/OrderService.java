@@ -2,7 +2,7 @@ package com.yas.order.service;
 
 import static com.yas.order.utils.Constants.ErrorCode.ORDER_NOT_FOUND;
 
-import com.yas.order.exception.NotFoundException;
+import com.yas.commonlibrary.exception.NotFoundException;
 import com.yas.order.model.Order;
 import com.yas.order.model.OrderAddress;
 import com.yas.order.model.OrderItem;
@@ -161,6 +161,24 @@ public class OrderService {
                 .toList();
 
         return new OrderListVm(orderVms, orderPage.getTotalElements(), orderPage.getTotalPages());
+    }
+
+    public List<OrderBriefVm> getLatestOrders(int count) {
+
+        if (count <= 0) {
+            return List.of();
+        }
+
+        Pageable pageable = PageRequest.of(0, count);
+        List<Order> orders =  orderRepository.getLatestOrders(pageable);
+
+        if (CollectionUtils.isEmpty(orders)) {
+            return List.of();
+        }
+
+        return orders.stream()
+                .map(OrderBriefVm::fromModel)
+                .toList();
     }
 
     public OrderExistsByProductAndUserGetVm isOrderCompletedWithUserIdAndProductId(final Long productId) {

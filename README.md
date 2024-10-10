@@ -2,6 +2,7 @@
 
 YAS is a pet project aim to practice building a typical microservice application in Java
 
+[![Gitleaks-check](https://github.com/nashtech-garage/yas/actions/workflows/gitleaks-check.yaml/badge.svg)](https://github.com/nashtech-garage/yas/actions/workflows/gitleaks-check.yaml)
 [![storefront-ci](https://github.com/nashtech-garage/yas/actions/workflows/storefront-ci.yaml/badge.svg)](https://github.com/nashtech-garage/yas/actions/workflows/storefront-ci.yaml)
 [![storefront-bff-ci](https://github.com/nashtech-garage/yas/actions/workflows/storefront-bff-ci.yaml/badge.svg)](https://github.com/nashtech-garage/yas/actions/workflows/storefront-bff-ci.yaml)
 [![backoffice-ci](https://github.com/nashtech-garage/yas/actions/workflows/backoffice-ci.yaml/badge.svg)](https://github.com/nashtech-garage/yas/actions/workflows/backoffice-ci.yaml)
@@ -83,7 +84,7 @@ https://github.com/nashtech-garage/yas/tree/main/k8s/deploy
 
 ## Documentation
 - [Architecture and components](https://github.com/nashtech-garage/yas/tree/main/docs)
-- [Developer guidelines](https://github.com/nashtech-garage/yas/wiki/Developer-guidelines)
+- [Developer guidelines](https://github.com/nashtech-garage/yas/tree/main/docs/developer-guidelines.md)
 
 ## Contributing
 - Give us a star
@@ -105,12 +106,15 @@ By contributing, you agree that your contributions will be licensed under MIT Li
     </thead>
     <tbody>
         <tr valign="top">
-            <td><img src="screenshots/yas-backoffice.png" alt="Yas Backoffice"/></td>
-            <td><img src="screenshots/yas-grafana-tracing.png" alt="Yas Grafana Tracing"/></td>
-        </tr>
-        <tr valign="top">
-            <td><img src="screenshots/yas-storefront.png" alt="Yas Storefront"/></td>
-            <td><img src="screenshots/yas-grafana-metrics.png" alt="Yas Grafana Metrics"/></td>
+            <td>
+                <img src="screenshots/yas-backoffice.png" alt="Yas Backoffice"/>
+                <img src="screenshots/yas-storefront.png" alt="Yas Storefront"/>
+                <img src="screenshots/yas-swagger.png" alt="Yas Swagger"/>
+            </td>
+            <td>
+                <img src="screenshots/yas-grafana-tracing.png" alt="Yas Grafana Tracing"/>
+                <img src="screenshots/yas-grafana-metrics.png" alt="Yas Grafana Metrics"/>
+            </td>
         </tr>
     </tbody>
 </table>

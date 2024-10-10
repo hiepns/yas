@@ -22,7 +22,7 @@ public class OrderService extends AbstractCircuitBreakFallbackHandler {
     private final ServiceUrlConfig serviceUrlConfig;
 
     @Retry(name = "restApi")
-    @CircuitBreaker(name = "restCircuitBreaker", fallbackMethod = "handleFallback")
+    @CircuitBreaker(name = "restCircuitBreaker", fallbackMethod = "handleLongFallback")
     public Long updateCheckoutStatus(CapturedPayment capturedPayment) {
         final URI url = UriComponentsBuilder
                 .fromHttpUrl(serviceUrlConfig.order())
@@ -34,11 +34,13 @@ public class OrderService extends AbstractCircuitBreakFallbackHandler {
 
         return restClient.put()
                 .uri(url)
-                .body(checkoutStatusVm).retrieve().body(Long.class);
+                .body(checkoutStatusVm)
+            .retrieve()
+            .body(Long.class);
     }
 
     @Retry(name = "restApi")
-    @CircuitBreaker(name = "restCircuitBreaker", fallbackMethod = "handleFallback")
+    @CircuitBreaker(name = "restCircuitBreaker", fallbackMethod = "handlePaymentOrderStatusFallback")
     public PaymentOrderStatusVm updateOrderStatus(PaymentOrderStatusVm orderPaymentStatusVm) {
 
         final URI url = UriComponentsBuilder
@@ -52,5 +54,13 @@ public class OrderService extends AbstractCircuitBreakFallbackHandler {
                 .body(orderPaymentStatusVm)
                 .retrieve()
                 .body(PaymentOrderStatusVm.class);
+    }
+
+    protected Long handleLongFallback(Throwable throwable) throws Throwable {
+        return handleTypedFallback(throwable);
+    }
+
+    protected PaymentOrderStatusVm handlePaymentOrderStatusFallback(Throwable throwable) throws Throwable {
+        return handleTypedFallback(throwable);
     }
 }
